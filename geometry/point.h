@@ -10,13 +10,11 @@ class Vector;
 
 template<typename Tp, size_t dim = 2> 
 class Point {
-public:
-    typedef Tp value_type;  
-    const size_t kCntDimm = dim;
-
 public: 
+    Point(){}
+
     template<class...CoordinateType>
-    Point(const CoordinateType ... coordinates) {
+    Point(CoordinateType ... coordinates) {
         static_assert(sizeof...(CoordinateType) == dim, 
                 "count of coordinates must be equal to count of dimensions of Point");
         coordinates_ = {static_cast<Tp>(coordinates)...};
