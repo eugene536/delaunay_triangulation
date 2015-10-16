@@ -22,11 +22,12 @@ public:
     template<class...PointType>
     Polygon(PointType ... points) {
         static_assert(sizeof...(PointType) >= 3,
-                "count of points must be equal to count of dimensions of Polygon");
+                "count of points must be >= 3");
         points_ = {static_cast<Point<Tp, dim>>(points)...};
     }
 
     double Perimeter() const {
+        assert(points_.size() >= 3);
         double res = 0;
         for (size_t i = 0; i < points_.size() - 1; ++i) {
             res += Vec(points_[i], points_[i + 1]).Length();            
@@ -37,6 +38,7 @@ public:
     }
 
     double Square() const {
+        assert(points_.size() >= 3);
         double res = 0;
         for (size_t i = 1; i < points_.size() - 1; ++i) {
             Vec first(points_[0], points_[i]);
@@ -48,7 +50,7 @@ public:
     }
 
     std::vector<std::tuple<Tp, Tp, Tp>> Triangulation() const {
-        
+        assert(points_.size() >= 3);
     }
 
 private:
