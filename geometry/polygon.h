@@ -122,6 +122,10 @@ private:
         const Pnt& prev = *(--cur_it)->first;
         const Pnt& cur = *(++cur_it)->first;
         const Pnt& next = *(++cur_it)->first;
+        // if ear is convex
+        if (Vec(prev, cur).Rotate(Vec(cur, next)) <= 0) {
+            return false;
+        }
 
         for (const auto& point: points) {
             if (*point.first == prev || 

@@ -18,7 +18,7 @@ public:
         , valid_(false)
     {}
 
-    CircularIterator& operator++() {
+    const CircularIterator& operator++() const {
         assert(valid_);
         if (cur_ == end_) {
             cur_ = beg_;
@@ -28,13 +28,13 @@ public:
         return *this;
     }
 
-    CircularIterator operator++(int) {
+    CircularIterator operator++(int) const {
         CircularIterator prev(*this);
         ++(*this);
         return prev;
     }
 
-    CircularIterator& operator--() {
+    const CircularIterator& operator--() const {
         assert(valid_);
         if (cur_ == beg_) {
             cur_ = end_;
@@ -44,14 +44,14 @@ public:
         return *this;
     }
 
-    CircularIterator operator--(int) {
+    CircularIterator operator--(int) const {
         CircularIterator prev(*this);
         --(*this);
 
         return prev;
     }
 
-    ValueType& operator*() {
+    ValueType& operator*() const {
         assert(valid_);
         if (cur_ == end_) {
             return *beg_;
@@ -59,7 +59,7 @@ public:
         return *cur_;
     }
 
-    ValueType* operator->() {
+    ValueType* operator->() const {
         assert(valid_);
         if (cur_ == end_) {
             return &(*beg_);
@@ -75,8 +75,8 @@ public:
         return cur_ != oth.cur_;
     }
 
-private:
-    BaseIterator cur_;
+public:
+    mutable BaseIterator cur_;
     BaseIterator beg_;
     BaseIterator end_;
     const bool valid_;
@@ -154,7 +154,7 @@ public:
         return cur_ != oth.cur_;
     }
 
-private:
+public:
     mutable BaseIterator cur_;
     BaseIterator beg_;
     BaseIterator end_;
