@@ -25,13 +25,28 @@ public:
         coordinates_ = coordinates;
     }
 
+    Point(Point&& oth) {
+        assert(this != &oth);
+        coordinates_ = std::move(oth.coordinates_);
+    }
+
+    Point<Tp, dim>& operator=(Point&& oth) {
+        assert(this != &oth);
+        coordinates_ = std::move(oth.coordinates_);
+
+        return *this;
+    }
+
     bool operator<(const Point<Tp, dim>& oth) const {
         for (size_t i = 0; i < coordinates_.size(); ++i) {
             if (coordinates_[i] < oth.coordinates_[i]) {
+                return true;
+            } else if (coordinates_[i] > oth.coordinates_[i]) {
                 return false;
             }
         }
-        return true;
+
+        return false;
     }
 
 

@@ -50,21 +50,20 @@ public:
         return res;
     }
 
-    Polygon ConvexHull() {
+     Poly ConvexHull() {
         assert(dim == 2);
-        int min_id = 0;
-        for (int i = 1; i < (int) points_.size(); ++i) {
-            if (points_[i] < points_[min_id]) {
-                min_id = i;
-            }
+        size_t min_id = std::distance(points_.begin(), 
+                                     std::min_element(points_.begin(), points_.end()));
+
+        if (min_id != 0) {
+            std::swap(points_[min_id], points_[0]);
         }
 
-        std::swap(points_[min_id], points_[0]);
         std::sort(points_.begin() + 1, points_.end(), [this] (const Pnt& a, const Pnt& b) -> bool {
             Vec first = Vec(points_[0], a);
             Vec second = Vec(points_[0], b);
             if (first.Rotate(second) == 0) {
-                return Vec(points_[0], a).Length() < Vec(points_[0], b).Length();
+                return first.Length() < second.Length();
             }
 
             return first.Rotate(second) > 0;
@@ -72,7 +71,7 @@ public:
 
         Poly res;
         std::vector<Pnt> & new_points = res.points_;
-        for (int i = 0; i < (int) points_.size(); ++i) {
+        for (size_t i = 0; i < points_.size(); ++i) {
             while (new_points.size() >= 2) {
                 Vec first(new_points[new_points.size() - 2], new_points.back());
                 Vec second(new_points.back(), points_[i]);

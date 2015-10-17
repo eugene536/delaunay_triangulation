@@ -45,6 +45,15 @@ public:
         return sqrt(static_cast<double>(sum));
     }
 
+    Tp Length2() const {
+        Tp sum = 0;
+        for (size_t i = 0; i < dim; ++i) {
+            sum += coordinates_[i] * coordinates_[i];
+        }
+
+        return sum;
+    }
+
     Tp DotProduct(const Vec& oth) const {
         Tp res = 0;
         for (size_t i = 0; i < dim; ++i) {
@@ -70,13 +79,14 @@ public:
         return result;
     }
 
-    inline int sgn(Tp val) const {
-        return (Tp(0) < val) - (val < Tp(0));
+    template<typename T>
+    inline static int sgn(T val) {
+        return (T(0) < val) - (val < T(0));
     }
 
     int Rotate(const Vec& oth) const {
         assert(dim == 2);
-        return sgn(CrossProduct(oth).coordinates_[2]);
+        return sgn(coordinates_[0] * oth.coordinates_[1] - coordinates_[1] * oth.coordinates_[0]);
     }
 
     Vec operator-(const Vec& oth) const {
