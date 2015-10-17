@@ -8,6 +8,7 @@
 #include <cassert>
 #include <algorithm>
 #include <list>
+#include <iterator>
 #include "point.h"
 #include "vector.h"
 #include "circular_list.h"
@@ -91,28 +92,57 @@ public:
         assert(points_.size() >= 3);
         std::vector<std::tuple<Tp, Tp, Tp>> res;
 
-        CircularList<std::pair<Pnt*, size_t>> points;
-        points.resize(points_.size());
+        CircularList<std::pair<const Pnt*, size_t>> points;
         for (size_t i = 0; i < points_.size(); ++i) {
-            points.push_back(make_pair(&points_[i], i));
+            points.push_back(std::make_pair(&points_[i], i));
         }
 
-        std::vector<typename decltype(points)::iterator> ears;
+        std::vector<typename decltype(points)::const_iterator> ears;
         size_t i = 0;
-        for (auto it = points.begin(); i < points.size(); ++it, ++i) {
+        for (auto it = points.cbegin(); i < points.size(); ++it, ++i) {
             if (IsEar(points, it)) {
                 ears.push_back(it);
             }
+        }
+
+        using std::cerr;
+        using std::endl;
+        cerr << "EARS: " << endl;
+        for (const auto& it: ears) {
+            cerr << "#" << it->second << " " << *it->first << endl;
         }
 
         return res;
     }
 
 private:
-    bool IsEar(const CircularList<std::pair<Pnt*, size_t>>& points, 
-               typename decltype(points)::const_iterator cur) 
+    bool IsEar(const CircularList<std::pair<const Pnt*, size_t>>& points, 
+               typename CircularList<std::pair<const Pnt*, size_t>>::const_iterator cur_it) const
     {
-        for (
+        const Pnt& prev = *(--cur_it)->first;
+        const Pnt& cur = *(++cur_it)->first;
+        const Pnt& next = *(++cur_it)->first;
+
+        for (const auto& point: points) {
+            if (*point.first == prev || 
+                *point.first == cur || 
+                *point.first == next) 
+            {
+                continue;    
+            }
+
+            const Pnt& cur_p = *point.first;
+
+            // point liy inside the triangle prev-cur-next
+            // and therefore point cur isn't an ear
+            if (Vec(next, prev).Rotate(Vec(next, cur_p)) > 0 &&
+                Vec(prev, cur).Rotate(Vec(prev, cur_p)) > 0 &&
+                Vec(cur, next).Rotate(Vec(cur, cur_p)) > 0)
+            {
+                return false;
+            }
+        }
+
         return true;
     }
 

@@ -56,6 +56,15 @@ public:
         return false;
     }
 
+    bool operator==(const Point<Tp, dim>& oth) const {
+        for (size_t i = 0; i < coordinates_.size(); ++i) {
+            if (coordinates_[i] != oth.coordinates_[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
 
 private:
     std::vector<Tp> coordinates_;
