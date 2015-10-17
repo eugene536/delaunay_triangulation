@@ -10,6 +10,9 @@ class Vector;
 
 template<typename Tp, size_t dim = 2> 
 class Point {
+public:
+    typedef Point<Tp, dim> Pnt;
+
 public: 
     Point(){}
 
@@ -25,12 +28,16 @@ public:
         coordinates_ = coordinates;
     }
 
-    Point(Point&& oth) {
+    Point(const Pnt& oth) = default;
+
+    Point(Pnt&& oth) {
         assert(this != &oth);
         coordinates_ = std::move(oth.coordinates_);
     }
 
-    Point<Tp, dim>& operator=(Point&& oth) {
+    Pnt& operator=(const Pnt& oth) = default;
+
+    Pnt& operator=(Pnt&& oth) {
         assert(this != &oth);
         coordinates_ = std::move(oth.coordinates_);
 

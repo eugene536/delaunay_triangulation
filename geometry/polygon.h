@@ -7,8 +7,10 @@
 #include <cmath>
 #include <cassert>
 #include <algorithm>
+#include <list>
 #include "point.h"
 #include "vector.h"
+#include "circular_list.h"
 
 template<typename Tp, size_t dim = 2> 
 class Polygon {
@@ -87,11 +89,35 @@ public:
 
     std::vector<std::tuple<Tp, Tp, Tp>> Triangulation() const {
         assert(points_.size() >= 3);
-        
+        std::vector<std::tuple<Tp, Tp, Tp>> res;
+
+        CircularList<std::pair<Pnt*, size_t>> points;
+        points.resize(points_.size());
+        for (size_t i = 0; i < points_.size(); ++i) {
+            points.push_back(make_pair(&points_[i], i));
+        }
+
+        std::vector<typename decltype(points)::iterator> ears;
+        size_t i = 0;
+        for (auto it = points.begin(); i < points.size(); ++it, ++i) {
+            if (IsEar(points, it)) {
+                ears.push_back(it);
+            }
+        }
+
+        return res;
     }
 
 private:
-    std::vector<Point<Tp, dim>> points_;
+    bool IsEar(const CircularList<std::pair<Pnt*, size_t>>& points, 
+               typename decltype(points)::const_iterator cur) 
+    {
+        for (
+        return true;
+    }
+
+private:
+    std::vector<Pnt> points_;
 
 private:
     template<typename T, size_t d>
