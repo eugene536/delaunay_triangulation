@@ -25,6 +25,16 @@ public:
         coordinates_ = coordinates;
     }
 
+    bool operator<(const Point<Tp, dim>& oth) const {
+        for (size_t i = 0; i < coordinates_.size(); ++i) {
+            if (coordinates_[i] < oth.coordinates_[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+
 private:
     std::vector<Tp> coordinates_;
 
@@ -40,14 +50,16 @@ private:
 
 template<typename Tp, size_t dim = 2>
 std::ostream& operator << (std::ostream& out, const Point<Tp, dim>& point) {
-    out << "p(";
+    //out << "p(";
     if (point.coordinates_.size() > 0) {
         for (size_t i = 0; i < point.coordinates_.size() - 1; ++i) {
-            out << point.coordinates_[i] << ", ";
+            out << point.coordinates_[i] << " ";
+            //out << point.coordinates_[i] << ", ";
         }
         out << point.coordinates_.back();
     }
-    return out << ")";
+    return out;
+    //return out << ")";
 }
 
 template<typename Tp, size_t dim = 2>

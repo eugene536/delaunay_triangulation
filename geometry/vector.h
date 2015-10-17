@@ -55,7 +55,7 @@ public:
     }
 
     Vector<Tp, 3> CrossProduct(const Vec& oth) const {
-        assert(dim < 4); // =(
+        assert(dim <= 3); // =(
         std::vector<Tp> first = coordinates_;
         first.resize(3);
 
@@ -68,6 +68,15 @@ public:
         result.coordinates_[2] = first[0] * second[1] - first[1] * second[0];
 
         return result;
+    }
+
+    inline int sgn(Tp val) const {
+        return (Tp(0) < val) - (val < Tp(0));
+    }
+
+    int Rotate(const Vec& oth) const {
+        assert(dim == 2);
+        return sgn(CrossProduct(oth).coordinates_[2]);
     }
 
     Vec operator-(const Vec& oth) const {

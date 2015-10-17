@@ -6,6 +6,7 @@
 #include <functional>
 #include <cmath>
 #include <cassert>
+#include <algorithm>
 #include "point.h"
 #include "vector.h"
 
@@ -49,8 +50,45 @@ public:
         return res;
     }
 
+    Polygon ConvexHull() {
+        assert(dim == 2);
+        int min_id = 0;
+        for (int i = 1; i < (int) points_.size(); ++i) {
+            if (points_[i] < points_[min_id]) {
+                min_id = i;
+            }
+        }
+
+        std::swap(points_[min_id], points_[0]);
+        std::sort(points_.begin() + 1, points_.end(), [this] (const Pnt& a, const Pnt& b) -> bool {
+            Vec first = Vec(points_[0], a);
+            Vec second = Vec(points_[0], b);
+            if (first.Rotate(second) == 0) {
+                return Vec(points_[0], a).Length() < Vec(points_[0], b).Length();
+            }
+
+            return first.Rotate(second) > 0;
+        });
+
+        Poly res;
+        std::vector<Pnt> & new_points = res.points_;
+        for (int i = 0; i < (int) points_.size(); ++i) {
+            while (new_points.size() >= 2) {
+                Vec first(new_points[new_points.size() - 2], new_points.back());
+                Vec second(new_points.back(), points_[i]);
+                if (first.Rotate(second) > 0)
+                    break;
+                new_points.pop_back();
+            }
+            new_points.push_back(points_[i]);
+        }
+
+        return res;
+    }
+
     std::vector<std::tuple<Tp, Tp, Tp>> Triangulation() const {
         assert(points_.size() >= 3);
+        
     }
 
 private:
@@ -66,14 +104,16 @@ private:
 
 template<typename Tp, size_t dim = 2>
 std::ostream& operator << (std::ostream& out, const Polygon<Tp, dim>& polygon) {
-    out << "poly{";
+    //out << "poly{";
+    out << polygon.points_.size() << std::endl;
     if (polygon.points_.size() > 0) {
         for (size_t i = 0; i < polygon.points_.size() - 1; ++i) {
-            out << polygon.points_[i] << ", ";
+            out << polygon.points_[i] << std::endl;
         }
         out << polygon.points_.back();
     }
-    return out << "}";
+    return out;
+    //return out << "}";
 }
 
 template<typename Tp, size_t dim = 2>
