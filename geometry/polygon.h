@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <list>
 #include <iterator>
+#include <unordered_map>
 #include "point.h"
 #include "vector.h"
 #include "circular_list.h"
@@ -19,6 +20,9 @@ private:
     typedef Polygon<Tp, dim> Poly;
     typedef Vector<Tp, dim> Vec;
     typedef Point<Tp, dim> Pnt;
+    typedef CircularList<std::pair<const Pnt*, size_t>> CircularPoints;
+    typedef typename CircularPoints::const_iterator CPointsConstIterator;
+    typedef typename CircularPoints::iterator CPointsIterator;
 
 public: 
     Polygon() {}
@@ -92,12 +96,12 @@ public:
         assert(points_.size() >= 3);
         std::vector<std::tuple<Tp, Tp, Tp>> res;
 
-        CircularList<std::pair<const Pnt*, size_t>> points;
+        CircularPoints points;
         for (size_t i = 0; i < points_.size(); ++i) {
-            points.push_back(std::make_pair(&points_[i], i));
+            points.push_back(std::make_pair(&points_[i], i + 1));
         }
 
-        std::vector<typename decltype(points)::const_iterator> ears;
+        CircularList<CPointsConstIterator> ears;
         size_t i = 0;
         for (auto it = points.cbegin(); i < points.size(); ++it, ++i) {
             if (IsEar(points, it)) {
@@ -106,22 +110,52 @@ public:
         }
 
         using std::cerr;
+        using std::cout;
         using std::endl;
         cerr << "EARS: " << endl;
         for (const auto& it: ears) {
             cerr << "#" << it->second << " " << *it->first << endl;
         }
 
+        //if (points.size() > 3)
+        for (auto it = ears.begin(); ears.size() >= 2;) {
+            CPointsConstIterator cur_point = *it;
+            cout << std::prev(cur_point)->second << " " << cur_point->second << " " << std::next(cur_point)->second << endl;
+            
+            points.erase(std::next(--cur_point));
+            if (points.size() == 3) {
+                break;
+            }
+
+            if (IsEar(points, cur_point)) {
+                
+            } else {
+
+            }
+
+            if (IsEar(points, cur_point - 1)) {
+
+            } else {
+
+            }
+
+            ears.erase(std::prev(++it));
+        }
+
+        for (auto it: points) {
+            cout << it.second << " ";
+        }
+        cout << endl;
+
         return res;
     }
 
 private:
-    bool IsEar(const CircularList<std::pair<const Pnt*, size_t>>& points, 
-               typename CircularList<std::pair<const Pnt*, size_t>>::const_iterator cur_it) const
+    bool IsEar(const CircularPoints& points, const CPointsConstIterator& cur_it) const
     {
-        const Pnt& prev = *(--cur_it)->first;
-        const Pnt& cur = *(++cur_it)->first;
-        const Pnt& next = *(++cur_it)->first;
+        const Pnt& prev = *std::prev(cur_it)->first;
+        const Pnt& cur = *cur_it->first;
+        const Pnt& next = *std::next(cur_it)->first;
         // if ear is convex
         if (Vec(prev, cur).Rotate(Vec(cur, next)) <= 0) {
             return false;
