@@ -2,231 +2,213 @@
 #define CIRCULAR_LIST_H
 #include <list>
 #include <cassert>
+#include <iostream>
 
-template <typename ValueType, 
-          typename BaseIterator>
-class CircularConstIterator {
-public:
-    typedef std::ptrdiff_t difference_type;
-    typedef ValueType value_type;
-    typedef const ValueType* pointer;
-    typedef const ValueType& reference;
-    typedef std::bidirectional_iterator_tag iterator_category;
+const int MAX_MEM = 1e8;
+int mpos = 0;
+char mem[MAX_MEM];
 
-public:
-    CircularConstIterator(BaseIterator cur, BaseIterator beg, BaseIterator end)
-        : cur_(cur)
-        , beg_(beg)
-        , end_(end)
-        , valid_(true)
+template <typename T>
+struct Node {
+    Node(T value)
+        : value(value)
     {}
 
-    explicit CircularConstIterator(BaseIterator cur)
-        : cur_(cur)
-        , valid_(false)
+    Node(T value, Node* prev, Node* next)
+        : value(value)
+        , prev(prev)
+        , next(next)
     {}
 
-    const CircularConstIterator& operator++() const {
-        assert(valid_);
-        if (cur_ == end_) {
-            cur_ = beg_;
-        }
-        cur_++;
-
-        return *this;
+    void * operator new ( size_t n ) {
+      char *res = mem + mpos;
+      mpos += n;
+      assert(mpos <= MAX_MEM);
+      return (void *)res;
     }
 
-    CircularConstIterator operator++(int) const {
-        CircularConstIterator prev(*this);
-        ++(*this);
-        return prev;
-    }
+    void operator delete (void *) noexcept { }
 
-    CircularConstIterator operator+=(int cnt) const {
-        for (int i = 0; i < cnt; ++i, ++*this);
-        return *this;
-    }
-
-    CircularConstIterator operator+(int cnt) const {
-        CircularConstIterator res(*this);
-        return res += cnt;
-    }
-
-    const CircularConstIterator& operator--() const {
-        assert(valid_);
-        if (cur_ == beg_) {
-            cur_ = end_;
-        }
-        cur_--;
-
-        return *this;
-    }
-
-    CircularConstIterator operator--(int) const {
-        CircularConstIterator prev(*this);
-        --(*this);
-
-        return prev;
-    }
-
-    CircularConstIterator operator-=(int cnt) const {
-        for (int i = 0; i < cnt; ++i, --*this);
-        return *this;
-    }
-
-    CircularConstIterator operator-(int cnt) const {
-        CircularConstIterator res(*this);
-        return res -= cnt;
-    }
-
-    const ValueType& operator*() const {
-        assert(valid_);
-        if (cur_ == end_) {
-            return *beg_;
-        }
-        return *cur_;
-    }
-
-    const ValueType* operator->() const {
-        assert(valid_);
-        if (cur_ == end_) {
-            return &(*beg_);
-        }
-        return &(*cur_);
-    }
-
-    operator BaseIterator() const {
-        if (cur_ == end_) {
-            return beg_;
-        }
-        return cur_;
-    }
-
-    bool operator==(const CircularConstIterator<ValueType, BaseIterator>& oth) const {
-        return cur_ == oth.cur_;
-    }
-
-    bool operator!=(const CircularConstIterator<ValueType, BaseIterator>& oth) const {
-        return cur_ != oth.cur_;
-    }
-
-public:
-    mutable BaseIterator cur_;
-    BaseIterator beg_;
-    BaseIterator end_;
-    const bool valid_;
-};
-
-template <typename ValueType, 
-          typename BaseIterator,
-          typename BaseConstIterator = BaseIterator>
-class CircularIterator : public CircularConstIterator<ValueType, BaseIterator> {
-public:
-    CircularIterator(BaseIterator cur, BaseIterator beg, BaseIterator end)
-        : CircularConstIterator<ValueType, BaseIterator>(cur, beg, end)
-    {}
-
-    explicit CircularIterator(BaseIterator cur)
-        : CircularConstIterator<ValueType, BaseIterator>(cur)
-    {}
-
-    const CircularIterator& operator++() const {
-        CircularConstIterator<ValueType, BaseIterator>::operator++();
-        return *this;
-    }
-
-    CircularIterator operator++(int) const {
-        CircularIterator prev(*this);
-        ++(*this);
-        return prev;
-    }
-
-    CircularIterator& operator+=(int cnt) const {
-        for (int i = 0; i < cnt; ++i, ++*this);
-        return *this;
-    }
-
-    CircularIterator operator+(int cnt) const {
-        CircularIterator res(*this);
-        return res += cnt;
-    }
-
-    const CircularIterator& operator--() const {
-        CircularConstIterator<ValueType, BaseIterator>::operator--();
-        return *this;
-    }
-
-    CircularIterator operator--(int) const {
-        CircularIterator prev(*this);
-        --(*this);
-        return prev;
-    }
-
-    CircularIterator& operator-=(int cnt) const {
-        for (int i = 0; i < cnt; ++i, --*this);
-        return *this;
-    }
-
-    CircularIterator operator-(int cnt) const {
-        CircularIterator res(*this);
-        return res -= cnt;
-    }
-
-
-    ValueType& operator*() const {
-        assert(this->valid_);
-        if (this->cur_ == this->end_) {
-            return *this->beg_;
-        }
-        return *this->cur_;
-    }
-
-    ValueType* operator->() const {
-        assert(this->valid_);
-        if (this->cur_ == this->end_) {
-            return &(*this->beg_);
-        }
-        return &(*this->cur_);
-    }
-
-    operator BaseConstIterator() const {
-        if (this->valid_ && this->cur_ == this->end_) {
-            return static_cast<BaseConstIterator>(this->beg_);
-        }
-        return static_cast<BaseConstIterator>(this->cur_);
-    }
+    T value;
+    Node<T>* prev;
+    Node<T>* next;
 };
 
 template <typename T>
-class CircularList : public std::list<T> {
+class CircularList {
 public:
-    typedef CircularIterator<T, typename std::list<T>::iterator, typename std::list<T>::const_iterator> iterator;
-    typedef CircularConstIterator<T, typename std::list<T>::const_iterator> const_iterator;
-    typedef std::list<T> base;
+    struct iterator;
 
-    iterator begin() {
-        return iterator(base::begin(), base::begin(), base::end());
+public:
+    CircularList() 
+        : head_(nullptr)
+        , tail_(nullptr)
+        , size_(0)
+    {}
+
+    ~CircularList() {
+        if (head_ == nullptr) return;
+        for (size_t i = 0; i < size_ - 1; ++i) {
+            head_ = head_->next;
+            delete head_->prev;
+        }
+        delete head_;
     }
 
-    const_iterator begin() const {
-        return const_iterator(base::begin(), base::begin(), base::end());
+    void push_back(T value) {
+        insert_after(iterator(tail_), value);
     }
 
-    const_iterator cbegin() const {
-        return const_iterator(base::begin(), base::begin(), base::end());
+    void erase(iterator&& it) {
+        Node<T>* cur = it.node();
+        it.invalidate();
+        Node<T>* next = cur->next;
+        if (cur != cur->prev) {
+            cur->prev->next = cur->next;
+            cur->next->prev = cur->prev;
+        }
+
+        if (head_ == cur)
+            head_ = next;
+        if (tail_ == cur)
+            tail_ = next->prev;
+        if (head_ == tail_) 
+            head_ = tail_ = nullptr;
+
+        delete cur;
+
+        size_--;
     }
 
-    iterator end() {
-        return iterator(base::end());
+    void insert_before(const iterator& it, const T& value) {
+        Node<T>* cur = it.node();
+        Node<T>* ver = new Node<T>(value, cur->prev, cur);
+        cur->prev->next = ver;
+        cur->prev = ver;
+
+        if (cur == head_) {
+            head_ = ver;
+        }
+        size_++;
     }
 
-    const_iterator end() const {
-        return const_iterator(base::end());
+    void insert_after(const iterator& it, const T& value) {
+        Node<T>* cur = it.node();
+        Node<T>* ver = new Node<T>(value);
+
+        if (head_ == nullptr) {
+            cur = head_ = tail_ = ver;
+            cur->next = cur;
+            cur->prev = cur;
+        } else {
+            ver->next = cur->next;
+            ver->prev = cur;
+
+            cur->next->prev = ver;
+            cur->next = ver;
+        }
+
+        if (cur == tail_) {
+            tail_ = ver;
+        }
+        size_++;
     }
 
-    const_iterator cend() const {
-        return const_iterator(base::end());
+    iterator begin() const {
+        return iterator(head_);
     }
+
+    iterator end() const {
+        return iterator(tail_);
+    }
+
+    size_t size() const {
+        return size_;
+    }
+
+private:
+    Node<T>* head_;
+    Node<T>* tail_;
+    size_t size_;
 };
+
+template<typename T>
+struct CircularList<T>::iterator {
+public:
+    iterator(Node<T>* cur)
+        : cur_(cur)
+        , valid_(true)
+    {}
+
+    iterator& operator++() {
+        assert(valid_);
+        cur_ = cur_->next;
+        return *this;
+    }
+
+    iterator operator++(int) {
+        assert(valid_);
+        iterator res(*this);
+        ++(*this);
+        return res;
+    }
+
+    iterator operator+(size_t cnt) const {
+        assert(valid_);
+        iterator res(*this);
+        for (size_t i = 0; i < cnt; ++i, ++res);
+        return res;
+    }
+
+    iterator& operator--() {
+        assert(valid_);
+        cur_ = cur_->prev;
+        return *this;
+    }
+
+    iterator operator-(size_t cnt) const {
+        assert(valid_);
+        iterator res(*this);
+        for (size_t i = 0; i < cnt; ++i, --res);
+        return res;
+    }
+
+    T& operator*() const {
+        assert(valid_);
+        return cur_->value;
+    }
+
+    T* operator->() const {
+        assert(valid_);
+        return &cur_->value;
+    }
+
+    bool operator==(const iterator& oth) const {
+        return cur_ == oth.cur_;
+    }
+
+    bool operator!=(const iterator& oth) const {
+        return cur_ != oth.cur_;
+    }
+
+private:
+    void invalidate() {
+        valid_ = false;
+    }
+
+    Node<T>* node() const {
+        assert(valid_);
+        return cur_;
+    }
+    
+private:
+    Node<T>* cur_;
+    bool valid_;
+
+private:
+    template<typename Tp>
+    friend class CircularList;
+};
+
 
 #endif //CIRCULAR_LIST_H

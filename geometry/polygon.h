@@ -21,7 +21,6 @@ private:
     typedef Vector<Tp, dim> Vec;
     typedef Point<Tp, dim> Pnt;
     typedef CircularList<std::pair<const Pnt*, size_t>> CircularPoints;
-    typedef typename CircularPoints::const_iterator CPointsConstIterator;
     typedef typename CircularPoints::iterator CPointsIterator;
 
 public: 
@@ -92,76 +91,99 @@ public:
         return res;
     }
 
-    std::vector<std::tuple<Tp, Tp, Tp>> Triangulation() const {
+    //std::vector<std::tuple<Tp, Tp, Tp>> Triangulation() const {
+    void Triangulation() const {
+        using std::cerr;
+        using std::cout;
+        using std::endl;
+
         assert(points_.size() >= 3);
-        std::vector<std::tuple<Tp, Tp, Tp>> res;
+        //std::vector<std::tuple<Tp, Tp, Tp>> res;
 
         CircularPoints points;
         for (size_t i = 0; i < points_.size(); ++i) {
             points.push_back(std::make_pair(&points_[i], i + 1));
         }
 
-        CircularList<CPointsConstIterator> ears;
+        CircularList<CPointsIterator> ears;
         size_t i = 0;
-        for (auto it = points.cbegin(); i < points.size(); ++it, ++i) {
+        //cerr << "here" << endl;
+        for (auto it = points.begin(); i < points.size(); ++it, ++i) {
             if (IsEar(points, it)) {
                 ears.push_back(it);
             }
         }
 
-        using std::cerr;
-        using std::cout;
-        using std::endl;
-        cerr << "EARS: " << endl;
-        for (const auto& it: ears) {
-            cerr << "#" << it->second << " " << *it->first << endl;
-        }
+        //{
+            //cerr << "EARS: " << endl;
+            //auto it = ears.begin();
+            //do {
+                //cerr << "#" << (*it)->second << " " << *(*it)->first << endl;
+            //} while (it++ != ears.end());
+        //}
 
-        //if (points.size() > 3)
+        if (points.size() > 3)
         for (auto it = ears.begin(); ears.size() >= 2;) {
-            CPointsConstIterator cur_point = *it;
-            cout << std::prev(cur_point)->second << " " << cur_point->second << " " << std::next(cur_point)->second << endl;
+            CPointsIterator cur_point = *it;
+            cout << (cur_point - 1)->second << " " << cur_point->second << " " << (cur_point + 1)->second << endl;
             
-            points.erase(std::next(--cur_point));
+            points.erase(--cur_point + 1);
             if (points.size() == 3) {
                 break;
             }
 
             if (IsEar(points, cur_point)) {
-                
-            } else {
-
+                if (*(it - 1) != cur_point) {
+                    ears.insert_before(it, cur_point);
+                }
+            } else if (*(it - 1) == cur_point) {
+                ears.erase(it - 1);
             }
 
-            if (IsEar(points, cur_point - 1)) {
-
-            } else {
-
+            if (IsEar(points, cur_point + 1)) {
+                if (*(it + 1) != cur_point + 1) {
+                    ears.insert_after(it, cur_point + 1);
+                }
+            } else if (*(it + 1) == cur_point + 1) {
+                ears.erase(it + 1);
             }
 
-            ears.erase(std::prev(++it));
+            ears.erase(++it -1);
+            //{
+                //cerr << "EARS: " << endl;
+                //auto it = ears.begin();
+                //do {
+                    //cerr << "#" << (*it)->second << " " << *(*it)->first << endl;
+                //} while (it++ != ears.end());
+            //}
         }
 
-        for (auto it: points) {
-            cout << it.second << " ";
+        assert(points.size() <= 3);
+        {
+            auto it = points.begin();
+            do {
+                cout << it->second << " ";
+            } while (it++ != points.end());
+            cout << endl;
         }
-        cout << endl;
 
-        return res;
+        //return res;
     }
 
 private:
-    bool IsEar(const CircularPoints& points, const CPointsConstIterator& cur_it) const
+    bool IsEar(const CircularPoints& points, const CPointsIterator& cur_it) const
     {
-        const Pnt& prev = *std::prev(cur_it)->first;
+        const Pnt& prev = *(cur_it - 1)->first;
         const Pnt& cur = *cur_it->first;
-        const Pnt& next = *std::next(cur_it)->first;
+        const Pnt& next = *(cur_it + 1)->first;
         // if ear is convex
         if (Vec(prev, cur).Rotate(Vec(cur, next)) <= 0) {
             return false;
         }
 
-        for (const auto& point: points) {
+        auto it = points.begin();
+        do {
+            auto point = *it;
             if (*point.first == prev || 
                 *point.first == cur || 
                 *point.first == next) 
@@ -173,13 +195,13 @@ private:
 
             // point liy inside the triangle prev-cur-next
             // and therefore point cur isn't an ear
-            if (Vec(next, prev).Rotate(Vec(next, cur_p)) > 0 &&
-                Vec(prev, cur).Rotate(Vec(prev, cur_p)) > 0 &&
-                Vec(cur, next).Rotate(Vec(cur, cur_p)) > 0)
+            if (Vec(next, prev).Rotate(Vec(next, cur_p)) >= 0 &&
+                Vec(prev, cur).Rotate(Vec(prev, cur_p)) >= 0 &&
+                Vec(cur, next).Rotate(Vec(cur, cur_p)) >= 0)
             {
                 return false;
             }
-        }
+        } while (points.end() != it++);
 
         return true;
     }

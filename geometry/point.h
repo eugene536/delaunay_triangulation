@@ -4,6 +4,8 @@
 #include <vector>
 #include <tuple>
 #include <functional>
+#include <cassert>
+#include <string.h>
 
 template<typename Tp, size_t dim> 
 class Vector;
@@ -11,41 +13,54 @@ class Vector;
 template<typename Tp, size_t dim = 2> 
 class Point {
 public:
+    const size_t sz = dim;
     typedef Point<Tp, dim> Pnt;
 
 public: 
-    Point(){}
+    Point() 
+    {
+        memset(coordinates_, 0, sizeof(coordinates_));
+    }
 
     template<class...CoordinateType>
-    Point(CoordinateType ... coordinates) {
+    Point(CoordinateType ... coordinates) 
+    {
         static_assert(sizeof...(CoordinateType) == dim, 
                 "count of coordinates must be equal to count of dimensions of Point");
-        coordinates_ = {static_cast<Tp>(coordinates)...};
+        init(0, coordinates...);
     }
 
-    Point(const std::vector<Tp>& coordinates) {
-        assert(coordinates.size() == dim);
-        coordinates_ = coordinates;
+    template<class FirstCoordinateType, class...CoordinateType>
+    void init(int lev, FirstCoordinateType first, CoordinateType...coordinates) {
+        static_assert(std::is_same<FirstCoordinateType, Tp>::value,
+                "types must be equal to Tp");
+
+        using namespace std;
+        coordinates_[lev] = first;
+        init(lev + 1, coordinates...);
     }
 
-    Point(const Pnt& oth) = default;
-
-    Point(Pnt&& oth) {
-        assert(this != &oth);
-        coordinates_ = std::move(oth.coordinates_);
+    void init(int lev) {
+        assert(lev == dim);
     }
 
-    Pnt& operator=(const Pnt& oth) = default;
+    //Point(const std::vector<Tp>& coordinates) {
+        //assert(coordinates.size() == dim);
+        //coordinates_ = coordinates;
+    //}
 
-    Pnt& operator=(Pnt&& oth) {
-        assert(this != &oth);
-        coordinates_ = std::move(oth.coordinates_);
+    Point(const Pnt& oth) 
+    {
+        *this = oth;
+    }
 
+    Pnt& operator=(const Pnt& oth) {
+        std::copy(oth.coordinates_, oth.coordinates_ + sz, coordinates_);
         return *this;
     }
 
     bool operator<(const Point<Tp, dim>& oth) const {
-        for (size_t i = 0; i < coordinates_.size(); ++i) {
+        for (size_t i = 0; i < sz; ++i) {
             if (coordinates_[i] < oth.coordinates_[i]) {
                 return true;
             } else if (coordinates_[i] > oth.coordinates_[i]) {
@@ -57,7 +72,7 @@ public:
     }
 
     bool operator==(const Point<Tp, dim>& oth) const {
-        for (size_t i = 0; i < coordinates_.size(); ++i) {
+        for (size_t i = 0; i < sz; ++i) {
             if (coordinates_[i] != oth.coordinates_[i]) {
                 return false;
             }
@@ -67,7 +82,7 @@ public:
 
 
 private:
-    std::vector<Tp> coordinates_;
+    Tp coordinates_[dim];
 
 private:
     friend class Vector<Tp, dim>;
@@ -82,12 +97,12 @@ private:
 template<typename Tp, size_t dim = 2>
 std::ostream& operator << (std::ostream& out, const Point<Tp, dim>& point) {
     //out << "p(";
-    if (point.coordinates_.size() > 0) {
-        for (size_t i = 0; i < point.coordinates_.size() - 1; ++i) {
+    if (point.sz > 0) {
+        for (size_t i = 0; i < point.sz - 1; ++i) {
             out << point.coordinates_[i] << " ";
             //out << point.coordinates_[i] << ", ";
         }
-        out << point.coordinates_.back();
+        out << point.coordinates_[point.sz - 1];
     }
     return out;
     //return out << ")";
@@ -95,11 +110,10 @@ std::ostream& operator << (std::ostream& out, const Point<Tp, dim>& point) {
 
 template<typename Tp, size_t dim = 2>
 std::istream& operator >> (std::istream& in, Point<Tp, dim>& point) {
-    point.coordinates_.clear();
     Tp x;
     for (size_t i = 0; i < dim; ++i) {
         in >> x;
-        point.coordinates_.push_back(x);
+        point.coordinates_[i] = x;
     }
 
     return in;
