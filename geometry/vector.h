@@ -28,20 +28,7 @@ public:
     {
         static_assert(sizeof...(CoordinateType) == dim, 
                 "count of coordinates must be equal to count of dimensions of Vector");
-        init(0, coordinates...);
-    }
-
-    template<class FirstCoordinateType, class...CoordinateType>
-    void init(int lev, FirstCoordinateType first, CoordinateType...coordinates) {
-        static_assert(std::is_same<FirstCoordinateType, Tp>::value,
-                "types must be equal to Tp");
-
-        coordinates_[lev] = first;
-        init(lev + 1, coordinates...);
-    }
-
-    void init(int lev) {
-        assert(lev == dim);
+        Init(0, coordinates...);
     }
 
     Vector(const Pnt& beg, const Pnt& end) {
@@ -59,11 +46,10 @@ public:
         *this = oth;
     }
 
-    Vector(Vector&& oth)
-    {
-        *this = std::move(oth);
-    }
-
+    // sometimes you can't calculate `Length`
+    // due to `sqrt` works with no all types (i.e. `mpq_class` doesn't support `sqrt`)
+    // use `Length2` for this case, which returns `Length` ^ 2, and calculate `sqrt` by hands
+    // or use `Length2` for perfomance reason, because sqrt so slow =)
     double Length() const {
         Tp sum = 0;
         for (size_t i = 0; i < dim; ++i) {
@@ -73,6 +59,7 @@ public:
         return sqrt(static_cast<double>(sum));
     }
 
+    // calculates `Length` ^ 2
     Tp Length2() const {
         Tp sum = 0;
         for (size_t i = 0; i < dim; ++i) {
@@ -106,21 +93,9 @@ public:
         return result;
     }
 
-    template<typename T>
-    inline static int sgn(T val) {
-        return (T(0) < val) - (val < T(0));
-    }
-
     int Rotate(const Vec& oth) const {
         assert(dim == 2);
-        return sgn(coordinates_[0] * oth.coordinates_[1] - coordinates_[1] * oth.coordinates_[0]);
-    }
-
-    Vec& operator=(Vec&& oth) {
-        assert(this != &oth);
-        coordinates_ = oth.coordinates_;
-
-        return *this;
+        return Sign(coordinates_[0] * oth.coordinates_[1] - coordinates_[1] * oth.coordinates_[0]);
     }
 
     Vec& operator=(const Pnt& oth) {
@@ -156,7 +131,36 @@ public:
     }
 
 private:
+    template<class FirstCoordinateType, class...CoordinateType>
+    void Init(int lev, FirstCoordinateType first, CoordinateType...coordinates) {
+        static_assert(std::is_convertible<FirstCoordinateType, Tp>::value,
+                "types must be convertible to Tp");
+
+        coordinates_[lev] = static_cast<Tp>(first);
+        Init(lev + 1, coordinates...);
+    }
+
+    void Init(int lev) {
+        assert(lev == dim);
+    }
+
+    template<typename T>
+    inline static int Sign(T val) {
+        return (T(0) < val) - (val < T(0));
+    }
+
+
+private:
     Tp coordinates_[dim];
+
+public:
+    template<typename T, size_t d>
+    friend void swap(Vector<T, d>& first, Vector<T, d>& second) {
+        using std::swap;
+        for (size_t i = 0; i < d; ++i) {
+            swap(first.coordinates_[i], second.coordinates_[i]);
+        }
+    }
 
 private:
     template<typename T, size_t d>
@@ -171,14 +175,10 @@ private:
 
 template<typename Tp, size_t dim = 2>
 std::ostream& operator << (std::ostream& out, const Vector<Tp, dim>& vector) {
-    out << "v(";
-    if (vector.sz > 0) {
-        for (size_t i = 0; i < vector.sz - 1; ++i) {
-            out << vector.coordinates_[i] << ", ";
-        }
-        out << vector.coordinates_[vector.sz - 1];
+    for (const Tp& x: vector.coordinates_) {
+        out << x << " ";
     }
-    return out << ")";
+    return out;
 }
 
 template<typename Tp, size_t dim = 2>

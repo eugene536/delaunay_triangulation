@@ -91,14 +91,14 @@ public:
         return res;
     }
 
-    //std::vector<std::tuple<Tp, Tp, Tp>> Triangulation() const {
-    void Triangulation() const {
-        using std::cerr;
-        using std::cout;
-        using std::endl;
+    // returns vector of triples
+    // count of result triangles = size of result vector / 3
+    std::vector<Tp> Triangulation() const {
+        using std::make_tuple;
 
         assert(points_.size() >= 3);
-        //std::vector<std::tuple<Tp, Tp, Tp>> res;
+        std::vector<Tp> res;
+        res.reserve(3 * (points_.size() - 2));
 
         CircularPoints points;
         for (size_t i = 0; i < points_.size(); ++i) {
@@ -107,25 +107,18 @@ public:
 
         CircularList<CPointsIterator> ears;
         size_t i = 0;
-        //cerr << "here" << endl;
         for (auto it = points.begin(); i < points.size(); ++it, ++i) {
             if (IsEar(points, it)) {
                 ears.push_back(it);
             }
         }
 
-        //{
-            //cerr << "EARS: " << endl;
-            //auto it = ears.begin();
-            //do {
-                //cerr << "#" << (*it)->second << " " << *(*it)->first << endl;
-            //} while (it++ != ears.end());
-        //}
-
         if (points.size() > 3)
         for (auto it = ears.begin(); ears.size() >= 2;) {
             CPointsIterator cur_point = *it;
-            cout << (cur_point - 1)->second << " " << cur_point->second << " " << (cur_point + 1)->second << endl;
+            res.push_back((cur_point - 1)->second);
+            res.push_back(cur_point->second);
+            res.push_back((cur_point + 1)->second);
             
             points.erase(--cur_point + 1);
             if (points.size() == 3) {
@@ -148,26 +141,16 @@ public:
                 ears.erase(it + 1);
             }
 
-            ears.erase(++it -1);
-            //{
-                //cerr << "EARS: " << endl;
-                //auto it = ears.begin();
-                //do {
-                    //cerr << "#" << (*it)->second << " " << *(*it)->first << endl;
-                //} while (it++ != ears.end());
-            //}
+            ears.erase(++it - 1);
         }
 
-        assert(points.size() <= 3);
-        {
-            auto it = points.begin();
-            do {
-                cout << it->second << " ";
-            } while (it++ != points.end());
-            cout << endl;
-        }
+        assert(points.size() == 3);
+        auto it = points.begin();
+        res.push_back(it->second);
+        res.push_back((it + 1)->second);
+        res.push_back((it + 2)->second);
 
-        //return res;
+        return res;
     }
 
 private:

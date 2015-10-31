@@ -6,6 +6,7 @@
 #include <functional>
 #include <cassert>
 #include <string.h>
+#include <cmath>
 
 template<typename Tp, size_t dim> 
 class Vector;
@@ -27,31 +28,37 @@ public:
     {
         static_assert(sizeof...(CoordinateType) == dim, 
                 "count of coordinates must be equal to count of dimensions of Point");
-        init(0, coordinates...);
+        Init(0, coordinates...);
     }
-
-    template<class FirstCoordinateType, class...CoordinateType>
-    void init(int lev, FirstCoordinateType first, CoordinateType...coordinates) {
-        static_assert(std::is_same<FirstCoordinateType, Tp>::value,
-                "types must be equal to Tp");
-
-        using namespace std;
-        coordinates_[lev] = first;
-        init(lev + 1, coordinates...);
-    }
-
-    void init(int lev) {
-        assert(lev == dim);
-    }
-
-    //Point(const std::vector<Tp>& coordinates) {
-        //assert(coordinates.size() == dim);
-        //coordinates_ = coordinates;
-    //}
 
     Point(const Pnt& oth) 
     {
         *this = oth;
+    }
+
+    // sometimes you can't calculate `Distance`
+    // due to `sqrt` works with no all types (i.e. `mpq_class` doesn't support `sqrt`)
+    // use `Distance2` for this case, which returns Distance ^ 2 and calculate `sqrt` by hands
+    // or use `Distance2` for perfomance reason, because sqrt so slow =)
+    double Distance(const Pnt& oth) {
+        Tp sum = 0;
+        for (size_t i = 0; i < dim; ++i) {
+            Tp diff = coordinates_[i] - oth.coordinates_[i]; 
+            sum += diff * diff;
+        }
+
+        return sqrt(static_cast<double>(sum));
+    }
+
+    // Calculates `Distance` ^ 2
+    Tp Distance2(const Pnt& oth) {
+        Tp sum = 0;
+        for (size_t i = 0; i < dim; ++i) {
+            Tp diff = coordinates_[i] - oth.coordinates_[i]; 
+            sum += diff * diff;
+        }
+
+        return sum;
     }
 
     Pnt& operator=(const Pnt& oth) {
@@ -80,9 +87,32 @@ public:
         return true;
     }
 
+private:
+    template<class FirstCoordinateType, class...CoordinateType>
+    void Init(int lev, FirstCoordinateType first, CoordinateType...coordinates) {
+        static_assert(std::is_convertible<FirstCoordinateType, Tp>::value,
+                "types must be convertible to Tp");
+
+        coordinates_[lev] = static_cast<Tp>(first);
+        Init(lev + 1, coordinates...);
+    }
+
+    void Init(int lev) {
+        assert(lev == dim);
+    }
+
 
 private:
     Tp coordinates_[dim];
+
+public:
+    template<typename T, size_t d>
+    friend void swap(Point<T, d>& first, Point<T, d>& second) {
+        using std::swap;
+        for (size_t i = 0; i < d; ++i) {
+            swap(first.coordinates_[i], second.coordinates_[i]);
+        }
+    }
 
 private:
     friend class Vector<Tp, dim>;
@@ -96,16 +126,10 @@ private:
 
 template<typename Tp, size_t dim = 2>
 std::ostream& operator << (std::ostream& out, const Point<Tp, dim>& point) {
-    //out << "p(";
-    if (point.sz > 0) {
-        for (size_t i = 0; i < point.sz - 1; ++i) {
-            out << point.coordinates_[i] << " ";
-            //out << point.coordinates_[i] << ", ";
-        }
-        out << point.coordinates_[point.sz - 1];
+    for (const Tp& x: point.coordinates_) {
+        out << x << " ";
     }
     return out;
-    //return out << ")";
 }
 
 template<typename Tp, size_t dim = 2>
