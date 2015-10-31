@@ -164,9 +164,6 @@ public:
 
 private:
     template<typename T, size_t d>
-    friend class Vector;
-
-    template<typename T, size_t d>
     friend std::ostream& operator << (std::ostream& out, const Vector<T, d>& vector);
 
     template<typename T, size_t d>
