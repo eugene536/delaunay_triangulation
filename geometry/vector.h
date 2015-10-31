@@ -47,9 +47,9 @@ public:
     }
 
     // sometimes you can't calculate `Length`
-    // due to `sqrt` works with no all types (i.e. `mpq_class` doesn't support `sqrt`)
-    // use `Length2` for this case, which returns `Length` ^ 2, and calculate `sqrt` by hands
-    // or use `Length2` for perfomance reason, because sqrt so slow =)
+    // due to `sqrt` works with not all types (e.g. `mpq_class` doesn't support `sqrt`)
+    // use `Length2` in this case, which returns Length ^ 2 and you'll need calculate `sqrt` by hands
+    // or you can use `Length2` for perfomance reasons, because `sqrt` is slow =)
     double Length() const {
         Tp sum = 0;
         for (size_t i = 0; i < dim; ++i) {

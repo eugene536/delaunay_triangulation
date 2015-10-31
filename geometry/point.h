@@ -37,9 +37,9 @@ public:
     }
 
     // sometimes you can't calculate `Distance`
-    // due to `sqrt` works with no all types (i.e. `mpq_class` doesn't support `sqrt`)
-    // use `Distance2` for this case, which returns Distance ^ 2 and calculate `sqrt` by hands
-    // or use `Distance2` for perfomance reason, because sqrt so slow =)
+    // due to `sqrt` works with not all types (e.g. `mpq_class` doesn't support `sqrt`)
+    // use `Distance2` in this case, which returns Distance ^ 2 and you'll need calculate `sqrt` by hands
+    // or you can use `Distance2` for perfomance reasons, because `sqrt` is slow =)
     double Distance(const Pnt& oth) {
         Tp sum = 0;
         for (size_t i = 0; i < dim; ++i) {
