@@ -8,6 +8,8 @@
 #include <cassert>
 #include "point.h"
 
+namespace geometry {
+
 template<typename Tp, size_t dim = 2> 
 class Vector {
 public:
@@ -18,14 +20,12 @@ private:
     typedef Point<Tp, dim> Pnt;
 
 public: 
-    Vector()
-    {
+    Vector() {
         memset(coordinates_, 0, sizeof(coordinates_));
     }
 
     template<class...CoordinateType>
-    Vector(CoordinateType ... coordinates) 
-    {
+    Vector(CoordinateType ... coordinates) {
         static_assert(sizeof...(CoordinateType) == dim, 
                 "count of coordinates must be equal to count of dimensions of Vector");
         Init(0, coordinates...);
@@ -41,8 +41,7 @@ public:
         coordinates_ = pnt.coordinates_;
     }
 
-    Vector(const Vector& oth) 
-    {
+    Vector(const Vector& oth) {
         *this = oth;
     }
 
@@ -69,13 +68,18 @@ public:
         return sum;
     }
 
-    Tp DotProduct(const Vec& oth) const {
-        Tp res = 0;
-        for (size_t i = 0; i < dim; ++i) {
-            res += coordinates_[i] * oth.coordinates_[i];
-        }
+    template<typename T = Tp>
+    T DotProduct(const Vec& oth) const {
+        T res = 0;
+        for (size_t i = 0; i < dim; ++i)
+            res += static_cast<T>(coordinates_[i]) * oth.coordinates_[i];
 
         return res;
+    }
+
+    template<typename T = Tp>
+    T DotProductSign(const Vec& oth) const {
+        return Sign(DotProduct<T>(oth));
     }
 
     Vector<Tp, 3> CrossProduct(const Vec& oth) const {
@@ -95,7 +99,12 @@ public:
 
     int Rotate(const Vec& oth) const {
         assert(dim == 2);
-        return Sign(coordinates_[0] * oth.coordinates_[1] - coordinates_[1] * oth.coordinates_[0]);
+        return Sign(coordinates_[0] * 1LL * oth.coordinates_[1] - coordinates_[1] * 1LL * oth.coordinates_[0]);
+    }
+
+    Vec& operator=(const Vec& oth) {
+        std::copy(oth.coordinates_, oth.coordinates_ + sz, coordinates_);
+        return *this;
     }
 
     Vec& operator=(const Pnt& oth) {
@@ -188,5 +197,7 @@ std::istream& operator >> (std::istream& in, Vector<Tp, dim>& vector) {
 
     return in;
 }
+
+} // namespace geometry
 
 #endif // VECTOR_H

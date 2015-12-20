@@ -13,6 +13,31 @@
 #include "point.h"
 #include "vector.h"
 #include "circular_list.h"
+#include "segment.h"
+
+namespace geometry {
+
+template<bool... Types>
+struct all_true;
+
+template<bool... Types>
+struct all_true<true, Types...> 
+    : all_true<Types...>
+{};
+
+template<bool...Types>
+struct all_true<false, Types...> 
+    : std::false_type
+{};
+
+template<>
+struct all_true<> 
+    : std::true_type
+{};
+
+enum Location : int {
+    INSIDE, BORDER, OUTSIDE
+};
 
 template<typename Tp, size_t dim = 2> 
 class Polygon {
@@ -24,13 +49,27 @@ private:
     typedef typename CircularPoints::iterator CPointsIterator;
 
 public: 
-    Polygon() {}
+    Polygon() 
+        : sz_(0)
+    {}
 
-    template<class...PointType>
-    Polygon(PointType ... points) {
+    explicit Polygon(size_t sz)
+        : sz_(sz)
+    {}
+        
+    template<class...PointType, typename = typename 
+        std::enable_if<
+            all_true<
+                std::is_same<
+                    typename std::decay<PointType>::type, Pnt
+                >::value...
+            >::value
+        >::type
+    >
+    Polygon(const PointType& ... points) {
         static_assert(sizeof...(PointType) >= 3,
                 "count of points must be >= 3");
-        points_ = {static_cast<Point<Tp, dim>>(points)...};
+        points_ = {points...};
     }
 
     double Perimeter() const {
@@ -153,6 +192,67 @@ public:
         return res;
     }
 
+    Location CheckInside(const Pnt& p) {
+        assert(dim == 2);
+
+        points_.push_back(points_[0]);
+        size_t cnt_intersections = 0;
+        for (size_t i = 0; i < points_.size() - 1; ++i) {
+            if (Segment<int>(points_[i], points_[i + 1]).Inside(p)) 
+                return INSIDE;
+
+            if (points_[i].y() == points_[i + 1].y()) 
+                continue;
+
+            double t2 = (p.y() - points_[i].y()) * 1.0 / (points_[i + 1].y() - points_[i].y());
+            double t1 = points_[i].x() - p.x() + (points_[i + 1].x() - points_[i].x()) * t2;
+
+            cnt_intersections += t2 >= 0 && t2 <= 1 && t1 >= 0 && p.y() != std::max(points_[i].y(), points_[i + 1].y());
+        }
+        points_.pop_back();
+
+        return cnt_intersections % 2 == 0 ? OUTSIDE : INSIDE;
+    }
+
+    Location CheckConvexInside(const Pnt& p) {
+        int l = 1;
+        int r = static_cast<int>(points_.size()) - 1;
+
+        Vec pv = Vec(points_[0], p);
+        Vec lv = Vec(points_[0], points_[l]);
+        Vec rv = Vec(points_[0], points_[r]);
+
+        int lvr = lv.Rotate(pv);
+        int rvr = rv.Rotate(pv);
+        if (lvr * rvr > 0)
+            return OUTSIDE;
+        else if (lvr == 0) 
+            return Segment<Tp>(points_[0], points_[l]).Inside(p) ? BORDER : OUTSIDE;
+        else if (rvr == 0)
+            return Segment<Tp>(points_[0], points_[r]).Inside(p) ? BORDER : OUTSIDE;
+
+        while (r - l > 1) {
+            int mid = (l + r) / 2;
+
+            Vec mv(points_[0], points_[mid]);
+            lv = Vec(points_[0], points_[l]);
+
+            if (lv.Rotate(pv) * mv.Rotate(pv) <= 0)
+                r = mid;
+            else
+                l = mid;
+        }
+
+        Vec lr(points_[l], points_[r]);
+        Vec l0(points_[l], points_[0]);
+        Vec lp(points_[l], p);
+
+        if (lr.Rotate(lp) * l0.Rotate(lp) <= 0)
+            return lr.Rotate(lp) == 0 ? BORDER : INSIDE;
+
+        return OUTSIDE;
+    }
+
 private:
     bool IsEar(const CircularPoints& points, const CPointsIterator& cur_it) const
     {
@@ -191,6 +291,7 @@ private:
 
 private:
     std::vector<Pnt> points_;
+    size_t sz_;
 
 private:
     template<typename T, size_t d>
@@ -202,7 +303,6 @@ private:
 
 template<typename Tp, size_t dim = 2>
 std::ostream& operator << (std::ostream& out, const Polygon<Tp, dim>& polygon) {
-    //out << "poly{";
     out << polygon.points_.size() << std::endl;
     if (polygon.points_.size() > 0) {
         for (size_t i = 0; i < polygon.points_.size() - 1; ++i) {
@@ -218,17 +318,19 @@ template<typename Tp, size_t dim = 2>
 std::istream& operator >> (std::istream& in, Polygon<Tp, dim>& polygon) {
     polygon.points_.clear();
 
-    size_t sz;
-    in >> sz;
-    polygon.points_.reserve(sz);
+    if (polygon.sz_ == 0)
+        in >> polygon.sz_;
+    polygon.points_.reserve(polygon.sz_);
 
     Point<Tp, dim> x;
-    for (size_t i = 0; i < sz; ++i) {
+    for (size_t i = 0; i < polygon.sz_; ++i) {
         in >> x;
         polygon.points_.push_back(x);
     }
 
     return in;
 }
+
+} // namespace geometry
 
 #endif // POLYGON_H

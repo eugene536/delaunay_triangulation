@@ -8,6 +8,8 @@
 #include <string.h>
 #include <cmath>
 
+namespace geometry {
+
 template<typename Tp, size_t dim> 
 class Vector;
 
@@ -18,21 +20,18 @@ public:
     typedef Point<Tp, dim> Pnt;
 
 public: 
-    Point() 
-    {
+    Point() {
         memset(coordinates_, 0, sizeof(coordinates_));
     }
 
     template<class...CoordinateType>
-    Point(CoordinateType ... coordinates) 
-    {
+    Point(CoordinateType ... coordinates) {
         static_assert(sizeof...(CoordinateType) == dim, 
                 "count of coordinates must be equal to count of dimensions of Point");
         Init(0, coordinates...);
     }
 
-    Point(const Pnt& oth) 
-    {
+    Point(const Pnt& oth) {
         *this = oth;
     }
 
@@ -59,6 +58,23 @@ public:
         }
 
         return sum;
+    }
+
+    Tp Get(size_t id) const {
+        assert(id < dim);
+        return coordinates_[id];
+    }
+
+    Tp x() const {
+        return coordinates_[0];
+    }
+
+    Tp y() const {
+        return coordinates_[1];
+    }
+
+    Tp z() const {
+        return coordinates_[2];
     }
 
     Pnt& operator=(const Pnt& oth) {
@@ -126,9 +142,8 @@ private:
 
 template<typename Tp, size_t dim = 2>
 std::ostream& operator << (std::ostream& out, const Point<Tp, dim>& point) {
-    for (const Tp& x: point.coordinates_) {
+    for (const Tp& x: point.coordinates_) 
         out << x << " ";
-    }
     return out;
 }
 
@@ -142,5 +157,7 @@ std::istream& operator >> (std::istream& in, Point<Tp, dim>& point) {
 
     return in;
 }
+
+} // namespace geometry
 
 #endif // POINT_H

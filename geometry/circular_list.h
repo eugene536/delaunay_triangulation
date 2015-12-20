@@ -4,6 +4,8 @@
 #include <cassert>
 #include <iostream>
 
+namespace geometry {
+
 const int MAX_MEM = 1e8;
 int mpos = 0;
 char mem[MAX_MEM];
@@ -209,6 +211,8 @@ private:
     template<typename Tp>
     friend class CircularList;
 };
+
+} // namespace geometry
 
 
 #endif //CIRCULAR_LIST_H
