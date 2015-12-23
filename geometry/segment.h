@@ -28,13 +28,17 @@ public:
         , v_rev_(p2, p1)
     {}
 
-    bool Inside(const Pnt& p) {
+    bool Inside(const Pnt& p) const {
         Vec p1_p(p1_, p);
         Vec p2_p(p2_, p);
         if (v_.Rotate(p1_p) == 0) 
             return v_.template DotProductSign<long long>(p1_p) * v_rev_.template DotProductSign<long long>(p2_p) >= 0;
         else
             return false;
+    }
+
+    Pnt Middle() const {
+        return p1_ + Pnt(v_) / 2;
     }
 
 private:

@@ -38,7 +38,7 @@ public:
     }
 
     explicit Vector(const Pnt& pnt) {
-        coordinates_ = pnt.coordinates_;
+        *this = pnt;
     }
 
     Vector(const Vector& oth) {
@@ -97,18 +97,45 @@ public:
         return result;
     }
 
+    // returns: -1, 0, 1; for 2D only
     int Rotate(const Vec& oth) const {
         assert(dim == 2);
         return Sign(coordinates_[0] * 1LL * oth.coordinates_[1] - coordinates_[1] * 1LL * oth.coordinates_[0]);
     }
 
+    template<typename T = Tp>
+    T Cross(const Vec& oth) const {
+        assert(dim == 2);
+        return coordinates_[0] * 1LL * oth.coordinates_[1] - coordinates_[1] * 1LL * oth.coordinates_[0];
+    }
+
+    Vector<double, dim> Normalize() const {
+        Vector<double, dim> res;
+        double length = Length();
+        for (size_t i = 0; i < dim; ++i)
+            res.coordinates_[i] = coordinates_[i] * 1.0 / length;
+        return res;
+    }
+
+    Vec GetNormal() const {
+        assert(dim == 2);
+        return Vec(-coordinates_[1], coordinates_[0]);
+    }
+
     Vec& operator=(const Vec& oth) {
-        std::copy(oth.coordinates_, oth.coordinates_ + sz, coordinates_);
+        Assign(oth);
         return *this;
     }
 
-    Vec& operator=(const Pnt& oth) {
-        std::copy(oth.coordinates_, oth.coordinates_ + sz, coordinates_);
+    template<typename U>
+    Vector<Tp, dim>& operator=(const Point<U, dim>& oth) {
+        Assign(oth);
+        return *this;
+    }
+
+    template<typename U>
+    Vector<Tp, dim>& operator=(const Vector<U, dim>& oth) {
+        Assign(oth);
         return *this;
     }
 
@@ -140,6 +167,12 @@ public:
     }
 
 private:
+    template<template <class, size_t> class T, class U>
+    void Assign(T<U, dim> oth) {
+        for (size_t i = 0; i < dim; ++i) 
+            coordinates_[i] = static_cast<U>(oth.coordinates_[i]);
+    }
+
     template<class FirstCoordinateType, class...CoordinateType>
     void Init(int lev, FirstCoordinateType first, CoordinateType...coordinates) {
         static_assert(std::is_convertible<FirstCoordinateType, Tp>::value,
@@ -163,15 +196,21 @@ private:
     Tp coordinates_[dim];
 
 public:
-    template<typename T, size_t d>
-    friend void swap(Vector<T, d>& first, Vector<T, d>& second) {
-        using std::swap;
-        for (size_t i = 0; i < d; ++i) {
-            swap(first.coordinates_[i], second.coordinates_[i]);
-        }
-    }
+    //template<typename T, size_t d>
+    //friend void swap(Vector<T, d>& first, Vector<T, d>& second) {
+        //using std::swap;
+        //for (size_t i = 0; i < d; ++i) {
+            //swap(first.coordinates_[i], second.coordinates_[i]);
+        //}
+    //}
 
 private:
+    template<typename, size_t>
+    friend class Vector;
+
+    template<typename, size_t>
+    friend class Point;
+
     template<typename T, size_t d>
     friend std::ostream& operator << (std::ostream& out, const Vector<T, d>& vector);
 

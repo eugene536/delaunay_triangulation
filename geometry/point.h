@@ -31,15 +31,24 @@ public:
         Init(0, coordinates...);
     }
 
-    Point(const Pnt& oth) {
+    Point(const Point<Tp, dim>& oth) {
         *this = oth;
+    }
+
+    template <typename U>
+    Point(const Point<U, dim>& oth) {
+        *this = oth;
+    }
+
+    Point(const Vector<Tp, dim>& vec) {
+        std::copy(vec.coordinates_, vec.coordinates_ + sz, coordinates_);
     }
 
     // sometimes you can't calculate `Distance`
     // due to `sqrt` works with not all types (e.g. `mpq_class` doesn't support `sqrt`)
     // use `Distance2` in this case, which returns Distance ^ 2 and you'll need calculate `sqrt` by hands
     // or you can use `Distance2` for perfomance reasons, because `sqrt` is slow =)
-    double Distance(const Pnt& oth) {
+    double Distance(const Pnt& oth) const {
         Tp sum = 0;
         for (size_t i = 0; i < dim; ++i) {
             Tp diff = coordinates_[i] - oth.coordinates_[i]; 
@@ -50,10 +59,11 @@ public:
     }
 
     // Calculates `Distance` ^ 2
-    Tp Distance2(const Pnt& oth) {
-        Tp sum = 0;
+    template<typename RetType = Tp>
+    RetType Distance2(const Pnt& oth) const {
+        RetType sum = 0, diff;
         for (size_t i = 0; i < dim; ++i) {
-            Tp diff = coordinates_[i] - oth.coordinates_[i]; 
+            diff = (RetType) coordinates_[i] - oth.coordinates_[i]; 
             sum += diff * diff;
         }
 
@@ -66,41 +76,69 @@ public:
     }
 
     Tp x() const {
-        return coordinates_[0];
+        return Get(0);
     }
 
     Tp y() const {
-        return coordinates_[1];
+        return Get(1);
     }
 
     Tp z() const {
-        return coordinates_[2];
+        return Get(2);
     }
 
-    Pnt& operator=(const Pnt& oth) {
-        std::copy(oth.coordinates_, oth.coordinates_ + sz, coordinates_);
+    template<typename U>
+    Point<Tp, dim>& operator=(const Point<U, dim>& oth) {
+        for (size_t i = 0; i < dim; ++i) {
+            coordinates_[i] = static_cast<U>(oth.coordinates_[i]);
+        }
         return *this;
     }
 
-    bool operator<(const Point<Tp, dim>& oth) const {
-        for (size_t i = 0; i < sz; ++i) {
-            if (coordinates_[i] < oth.coordinates_[i]) {
-                return true;
-            } else if (coordinates_[i] > oth.coordinates_[i]) {
-                return false;
-            }
+    Point<Tp, dim>& operator=(const Point<Tp, dim>& oth) {
+        for (size_t i = 0; i < dim; ++i) {
+            coordinates_[i] = static_cast<Tp>(oth.coordinates_[i]);
         }
+        return *this;
+    }
+
+    Pnt operator-(const Pnt& oth) const {
+        Pnt temp;
+        for (size_t i = 0; i < dim; ++i) 
+            temp.coordinates_[i] = coordinates_[i] - oth.coordinates_[i];
+
+        return temp;
+    }
+
+    Pnt operator+(const Pnt& oth) const {
+        Pnt temp;
+        for (size_t i = 0; i < dim; ++i) 
+            temp.coordinates_[i] = coordinates_[i] + oth.coordinates_[i];
+
+        return temp;
+    }
+
+    Pnt operator/(double value) const {
+        assert(value != 0);
+        Pnt temp;
+        for (size_t i = 0; i < dim; ++i) 
+            temp.coordinates_[i] = coordinates_[i] / value;
+
+        return temp;
+    }
+
+    bool operator<(const Point<Tp, dim>& oth) const {
+        for (size_t i = 0; i < sz; ++i)
+            if (coordinates_[i] < oth.coordinates_[i])
+                return true;
+            else if (coordinates_[i] > oth.coordinates_[i])
+                return false;
 
         return false;
     }
 
     bool operator==(const Point<Tp, dim>& oth) const {
-        for (size_t i = 0; i < sz; ++i) {
-            if (coordinates_[i] != oth.coordinates_[i]) {
-                return false;
-            }
-        }
-        return true;
+        return !(*this < oth) && !(oth < *this);
     }
 
 private:
@@ -122,16 +160,19 @@ private:
     Tp coordinates_[dim];
 
 public:
-    template<typename T, size_t d>
-    friend void swap(Point<T, d>& first, Point<T, d>& second) {
-        using std::swap;
-        for (size_t i = 0; i < d; ++i) {
-            swap(first.coordinates_[i], second.coordinates_[i]);
-        }
-    }
+    //template<typename T, size_t d>
+    //friend void swap(Point<T, d>& first, Point<T, d>& second) {
+        //using std::swap;
+        //for (size_t i = 0; i < d; ++i) {
+            //swap(first.coordinates_[i], second.coordinates_[i]);
+        //}
+    //}
 
 private:
     friend class Vector<Tp, dim>;
+
+    template <typename, size_t>
+    friend class Point;
 
     template<typename T, size_t d>
     friend std::ostream& operator << (std::ostream& out, const Point<T, d>& point);
