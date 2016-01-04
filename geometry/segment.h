@@ -44,6 +44,11 @@ public:
 private:
     Pnt p1_, p2_;
     Vec v_, v_rev_;
+
+private:
+
+    template<typename, size_t>
+    friend class Point;
 };
 
 } // namespace geometry

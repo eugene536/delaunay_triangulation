@@ -25,8 +25,6 @@ private:
 
 public:
     Circle(Pnt a, Pnt b, Pnt c) {
-        using namespace std;
-
         Pnt mid_ac = Segment<Tp>(a, c).Middle();
         Pnt mid_bc = Segment<Tp>(b, c).Middle();
 

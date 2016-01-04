@@ -7,17 +7,23 @@
 #include <cassert>
 #include <string.h>
 #include <cmath>
+#include <limits>
+#include <cstdlib>
 
 namespace geometry {
 
 template<typename Tp, size_t dim> 
 class Vector;
 
+template<typename Tp, size_t dim>
+class Segment;
+
 template<typename Tp, size_t dim = 2> 
 class Point {
 public:
     const size_t sz = dim;
     typedef Point<Tp, dim> Pnt;
+    typedef Vector<Tp, dim> Vec;
 
 public: 
     Point() {
@@ -44,16 +50,29 @@ public:
         std::copy(vec.coordinates_, vec.coordinates_ + sz, coordinates_);
     }
 
+    double Distance(const Segment<Tp, dim>& segment) const {
+        const Pnt& p1 = segment.p1_;
+        const Pnt& p2 = segment.p2_;
+
+        double min_dist = std::min(Distance(p1), Distance(p2));
+        Vec norm = segment.v_.GetNormal();
+
+        if (norm.Rotate(Vec(*this, p1)) * norm.Rotate(Vec(*this, p2)) < 0) {
+            min_dist = std::min(min_dist, std::abs(
+                Vec(*this, p1).template Cross<double>(Vec(*this, p2)) * 1.0 / p1.Distance(p2)));
+        }
+
+        return min_dist;
+    }
+
     // sometimes you can't calculate `Distance`
     // due to `sqrt` works with not all types (e.g. `mpq_class` doesn't support `sqrt`)
     // use `Distance2` in this case, which returns Distance ^ 2 and you'll need calculate `sqrt` by hands
     // or you can use `Distance2` for perfomance reasons, because `sqrt` is slow =)
     double Distance(const Pnt& oth) const {
-        Tp sum = 0;
-        for (size_t i = 0; i < dim; ++i) {
-            Tp diff = coordinates_[i] - oth.coordinates_[i]; 
-            sum += diff * diff;
-        }
+        double sum = 0;
+        for (size_t i = 0; i < dim; ++i)
+            sum += std::pow((double) coordinates_[i] - oth.coordinates_[i], 2);
 
         return sqrt(static_cast<double>(sum));
     }

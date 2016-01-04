@@ -13,12 +13,12 @@ char mem[MAX_MEM];
 template <typename T>
 struct Node {
     Node(T value)
-        : value(value)
+        : value_(value)
     {}
 
     Node(T value, Node* prev, Node* next)
-        : value(value)
-        , prev(prev)
+        : value_(value)
+        , prev_(prev)
         , next(next)
     {}
 
@@ -31,8 +31,8 @@ struct Node {
 
     void operator delete (void *) noexcept { }
 
-    T value;
-    Node<T>* prev;
+    T value_;
+    Node<T>* prev_;
     Node<T>* next;
 };
 
@@ -52,7 +52,7 @@ public:
         if (head_ == nullptr) return;
         for (size_t i = 0; i < size_ - 1; ++i) {
             head_ = head_->next;
-            delete head_->prev;
+            delete head_->prev_;
         }
         delete head_;
     }
@@ -65,15 +65,15 @@ public:
         Node<T>* cur = it.node();
         it.invalidate();
         Node<T>* next = cur->next;
-        if (cur != cur->prev) {
-            cur->prev->next = cur->next;
-            cur->next->prev = cur->prev;
+        if (cur != cur->prev_) {
+            cur->prev_->next = cur->next;
+            cur->next->prev_ = cur->prev_;
         }
 
         if (head_ == cur)
             head_ = next;
         if (tail_ == cur)
-            tail_ = next->prev;
+            tail_ = next->prev_;
         if (head_ == tail_) 
             head_ = tail_ = nullptr;
 
@@ -84,9 +84,9 @@ public:
 
     void insert_before(const iterator& it, const T& value) {
         Node<T>* cur = it.node();
-        Node<T>* ver = new Node<T>(value, cur->prev, cur);
-        cur->prev->next = ver;
-        cur->prev = ver;
+        Node<T>* ver = new Node<T>(value, cur->prev_, cur);
+        cur->prev_->next = ver;
+        cur->prev_ = ver;
 
         if (cur == head_) {
             head_ = ver;
@@ -101,12 +101,12 @@ public:
         if (head_ == nullptr) {
             cur = head_ = tail_ = ver;
             cur->next = cur;
-            cur->prev = cur;
+            cur->prev_ = cur;
         } else {
             ver->next = cur->next;
-            ver->prev = cur;
+            ver->prev_ = cur;
 
-            cur->next->prev = ver;
+            cur->next->prev_ = ver;
             cur->next = ver;
         }
 
@@ -164,7 +164,7 @@ public:
 
     iterator& operator--() {
         assert(valid_);
-        cur_ = cur_->prev;
+        cur_ = cur_->prev_;
         return *this;
     }
 
@@ -177,12 +177,12 @@ public:
 
     T& operator*() const {
         assert(valid_);
-        return cur_->value;
+        return cur_->value_;
     }
 
     T* operator->() const {
         assert(valid_);
-        return &cur_->value;
+        return &cur_->value_;
     }
 
     bool operator==(const iterator& oth) const {

@@ -172,9 +172,9 @@ public:
             nj = (j + 1) % sz;
             
             if (Vec(points_[i], points_[ni]).Rotate(Vec(points_[j], points_[nj])) >= 0)
-                j = (j + 1) % sz;
+                j = nj;
             else
-                i = (i + 1) % sz;
+                i = ni;
         }
         assert(id1 >= 0 && id2 >= 0 && id1 < (int) sz && id2 < (int) sz);
 
@@ -344,6 +344,18 @@ public:
         return points_.size();
     }
 
+    const Pnt& operator[](size_t id) const {
+        assert(id < sz_);
+
+        return points_[id];
+    }
+
+    Pnt& operator[](size_t id) {
+        assert(id < sz_);
+
+        return points_[id];
+    }
+
 private:
     bool IsEar(const CircularPoints& points, const CPointsIterator& cur_it) const
     {
@@ -390,6 +402,9 @@ private:
 
     template<typename T, size_t d>
     friend std::istream& operator >> (std::istream& in, Polygon<T, d>& polygon);
+
+    template<typename U>
+    friend double Distance(const Polygon<U, 2>& poly1, const Polygon<U, 2>& poly2);
 };
 
 template<typename Tp, size_t dim = 2>
