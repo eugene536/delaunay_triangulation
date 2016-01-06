@@ -18,24 +18,6 @@
 
 namespace geometry {
 
-template<bool... Types>
-struct all_true;
-
-template<bool... Types>
-struct all_true<true, Types...> 
-    : all_true<Types...>
-{};
-
-template<bool...Types>
-struct all_true<false, Types...> 
-    : std::false_type
-{};
-
-template<>
-struct all_true<> 
-    : std::true_type
-{};
-
 enum Location : int {
     INSIDE, BORDER, OUTSIDE
 };

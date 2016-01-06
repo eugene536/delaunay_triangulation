@@ -10,6 +10,25 @@
 
 namespace geometry {
 
+template<bool... Types>
+struct all_true;
+
+template<bool... Types>
+struct all_true<true, Types...> 
+    : all_true<Types...>
+{};
+
+template<bool...Types>
+struct all_true<false, Types...> 
+    : std::false_type
+{};
+
+template<>
+struct all_true<> 
+    : std::true_type
+{};
+
+
 template<typename Tp, size_t dim = 2> 
 class Vector {
 public:
@@ -24,7 +43,16 @@ public:
         memset(coordinates_, 0, sizeof(coordinates_));
     }
 
-    template<class...CoordinateType>
+        
+    template<class...CoordinateType, typename = typename 
+        std::enable_if<
+            all_true<
+                std::is_same<
+                    typename std::decay<CoordinateType>::type, Tp
+                >::value...
+            >::value
+        >::type
+    >
     Vector(CoordinateType ... coordinates) {
         static_assert(sizeof...(CoordinateType) == dim, 
                 "count of coordinates must be equal to count of dimensions of Vector");
@@ -37,11 +65,11 @@ public:
         }
     }
 
-    explicit Vector(const Pnt& pnt) {
+    Vector(const Pnt& pnt) {
         *this = pnt;
     }
 
-    Vector(const Vector& oth) {
+    Vector(const Vec& oth) {
         *this = oth;
     }
 
@@ -99,8 +127,7 @@ public:
 
     // returns: -1, 0, 1; for 2D only
     int Rotate(const Vec& oth) const {
-        assert(dim == 2);
-        return Sign(coordinates_[0] * 1LL * oth.coordinates_[1] - coordinates_[1] * 1LL * oth.coordinates_[0]);
+        return Sign(Cross(oth));
     }
 
     template<typename T = Tp>
@@ -168,7 +195,7 @@ public:
 
 private:
     template<template <class, size_t> class T, class U>
-    void Assign(T<U, dim> oth) {
+    void Assign(const T<U, dim>& oth) {
         for (size_t i = 0; i < dim; ++i) 
             coordinates_[i] = static_cast<U>(oth.coordinates_[i]);
     }

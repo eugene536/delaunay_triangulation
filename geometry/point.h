@@ -108,16 +108,14 @@ public:
 
     template<typename U>
     Point<Tp, dim>& operator=(const Point<U, dim>& oth) {
-        for (size_t i = 0; i < dim; ++i) {
+        for (size_t i = 0; i < dim; ++i)
             coordinates_[i] = static_cast<U>(oth.coordinates_[i]);
-        }
         return *this;
     }
 
     Point<Tp, dim>& operator=(const Point<Tp, dim>& oth) {
-        for (size_t i = 0; i < dim; ++i) {
+        for (size_t i = 0; i < dim; ++i)
             coordinates_[i] = static_cast<Tp>(oth.coordinates_[i]);
-        }
         return *this;
     }
 
@@ -125,6 +123,14 @@ public:
         Pnt temp;
         for (size_t i = 0; i < dim; ++i) 
             temp.coordinates_[i] = coordinates_[i] - oth.coordinates_[i];
+
+        return temp;
+    }
+
+    Pnt operator-() const {
+        Pnt temp;
+        for (size_t i = 0; i < dim; ++i) 
+            temp.coordinates_[i] = -coordinates_[i];
 
         return temp;
     }
@@ -142,6 +148,15 @@ public:
         Pnt temp;
         for (size_t i = 0; i < dim; ++i) 
             temp.coordinates_[i] = coordinates_[i] / value;
+
+        return temp;
+    }
+
+    Pnt operator*(double value) const {
+        assert(value != 0);
+        Pnt temp;
+        for (size_t i = 0; i < dim; ++i) 
+            temp.coordinates_[i] = coordinates_[i] * value;
 
         return temp;
     }
